@@ -1,6 +1,6 @@
 ---
 title: "Compte rendu de stage"
-author: "Lise Bigey, Alexandre Godmer"
+author: "Lise Bigey et Alexandre Godmer"
 date: '`r Sys.Date()`'
 output:
   html_document:
@@ -61,14 +61,14 @@ load("~spectraMABSCj3_j13.RData")
 
 ```
 
-## Filter les données non pertinentes
+### Traitement des données
 
 ```{r}
 sp <- spectraMABSCj3_j13         # on renomme les variables
 metadata <- MetadataJ3_J13vf_xslx
 ```
 
--   Réunir les espèces T28 et C28 sous ABSC:
+-   Réunion des espèces T28 et C28 sous ABSC:
 
 ```{r}
 # Nouvelles metadata avec T28 et C28 fusionnés
@@ -81,7 +81,7 @@ metadata <- metadata.absc
 
 ```
 
--   Charger les fonctions:
+-   Chargement des fonctions:
 
 ```{r}
 ## Charger toutes les fonctions en une seule fois
@@ -90,16 +90,18 @@ require(miceadds)
 miceadds::source.all("~Fonctions")
 ```
 
-### Etude des spectres par jour d'incbubation
+# 1. Etude de l’impact de la durée de culture de MABSC sur les résultats obtenus par MALDI-TOF MS
 
--   Somme des spectres par jour d'incubation :
+## A. Analyse en composantes principales (ACP) en fonction du jour d’extraction
+
+-   Somme des spectres par durée d'incubation :
 
 ```{r warning=FALSE}
-## Label pour le spectre moyen (par jour d'incubation)
+## Label pour le spectre moyen (par durée d'incubation)
 
 spot <- sapply(sp, function(x)metaData(x)$spot)
 metadata <- cbind.data.frame(metadata, spot = spot)
-spectreMoyen <- factor(paste(metadata$extractionday))     # on fait la somme des spectres par jour
+spectreMoyen <- factor(paste(metadata$extractionday))     # on fait la somme des spectres par durée d'incubation
 #levels(spectreMoyen)
 
 ## Traitement du signal
@@ -124,14 +126,14 @@ PCA_function(x = xSum$x,
              Scale = TRUE)
 ```
 
--   Médiane des spectres par jour d'incubation :
+-   Médiane des spectres par durée d'incubation :
 
 ```{r warning=FALSE}
-## Label pour le spectre moyen (par jour d'incubation)
+## Label pour le spectre moyen (par durée d'incubation)
 
 spot <- sapply(sp, function(x)metaData(x)$spot)
 metadata <- cbind.data.frame(metadata, spot = spot)
-spectreMoyen <- factor(paste(metadata$extractionday))     # on fait la médiane des spectres par jour
+spectreMoyen <- factor(paste(metadata$extractionday))     # on fait la médiane des spectres par durée d'incubation
 #levels(spectreMoyen)
 
 ## Traitement du signal
@@ -156,14 +158,14 @@ PCA_function(x = xMed$x,
              Scale = TRUE)
 ```
 
--   Moyenne des spectres par jour d'incubation:
+-   Moyenne des spectres par durée d'incubation:
 
 ```{r warning=FALSE}
-## Label pour le spectre moyen (par jour d'incubation)
+## Label pour le spectre moyen (par durée d'incubation)
 
 spot <- sapply(sp, function(x)metaData(x)$spot)
 metadata <- cbind.data.frame(metadata, spot = spot)
-spectreMoyen <- factor(paste(metadata$extractionday))     # on fait la moyenne des spectres par jour
+spectreMoyen <- factor(paste(metadata$extractionday))     # on fait la moyenne des spectres par durée d'incubation
 #levels(spectreMoyen)
 
 ## Traitement du signal
@@ -188,7 +190,7 @@ PCA_function(x = xMean$x,
              Scale = TRUE)
 
 ```
-
+## B. Analyse du nombre et de l’intensité moyenne des pics par spectre selon la durée de culture
 -   Etude du nombre de *m/z* avec un rapport signal/bruit supérieur à 3 en fonction des jours :
 
 ```{r warning=FALSE}
@@ -249,7 +251,7 @@ group_by(PICDAY_stats, factor(PICDAY_stats$L1)) %>%
   ) -> number_of_peaks
 number_of_peaks
 ```
-
+### Tests statistiques
 ```{r}
 shapiro.test(PICDAY_stats$value)
 #tapply(PICDAY_stats$value, PICDAY_stats$L1, shapiro.test) 
@@ -291,7 +293,7 @@ p +  stat_summary(fun=mean, geom="point", shape=20, size=2, color="red", fill="r
     
 ```
 
-### Analyse des intensités sommées
+- Analyse des intensités sommées
 
 ```{r}
 require(ggpubr)
@@ -305,7 +307,7 @@ p <- ggplot(PICDAY, aes(x = PICday_2$extract_day, y=PICday_2$intensity ,color = 
 p + theme_bw()
 
 ```
-
+### Tests statistiques
 ```{r}
 shapiro.test(PICday_2$intensity)
 #tapply(PICDAY_stats$value, PICDAY_stats$L1, shapiro.test) 
@@ -315,7 +317,7 @@ pairwise.wilcox.test(PICday_2$intensity, PICday_2$extract_day,
                  p.adjust.method = "BH")
 ```
 
-### Analyse des scores
+## D. Analyse des Log-scores selon la durée de culture
 
 ```{r}
 ### Import des données
@@ -354,7 +356,7 @@ group_by(metadata3, factor(metadata3$extractionday)) %>%
 
 Log_Score_extraction
 ```
-
+### Tests statistiques
 ```{r}
 shapiro.test(metadata3$score)
 ```
@@ -398,7 +400,7 @@ require(graphics)
 #cor.test(c(1.42,1.59,1.70, 1.86, 1.91, 1.95,1.90, 1.50), number_of_peaks$mean, method = "spearman")
 ```
 
-### Analyse des pics en communs
+## Analyse des pics en communs
 
 ```{r}
 ## Split accoding to extraction day
@@ -421,9 +423,9 @@ SPLIt_daysExtraction3 <- lapply(SPLIt_daysExtraction2, function(x) as.numeric(co
 Pic_communs <- Reduce(intersect, SPLIt_daysExtraction3)
 ```
 
-### Analyse des pics discriminants
+# 2. Elaboration de modèles par des méthodes d’apprentissage supervisé pour l’identification des sous-espèces de MABSC
 
-### sPLS-DA à J7
+## A. Elaboration d’un modèle par sPLS-DA
 
 ```{r}
 Split_day <- split(sp, metadata$extractionday)  
@@ -496,8 +498,9 @@ plotIndiv(final.splsda, comp = 1:2,
           legend = TRUE, title = " (b) PLSDA with prediction background")
 ```
 
-## LDA
+## B. Détermination de pics discriminants par ADL et ADLD
 
+### LDA
 ```{r}
 require(sda)
 set.seed(223)
@@ -506,8 +509,7 @@ ldar <- sda.ranking(Xtrain=x7$x, L=x7$metadata$subspecies, fdr=FALSE, diagonal=F
 plot(ldar)
 ```
 
-## DDA
-
+### DDA
 ```{r}
 ddar <- sda.ranking(Xtrain=x7$x, L=x7$metadata$subspecies, fdr=FALSE, diagonal=TRUE) #analyse
 
@@ -539,6 +541,8 @@ FreqRes = cbind.data.frame(SelectFrek$ABSC[,2], ABSC = SelectFrek$ABSC[,1],
 
 
 ```
+
+## 1.C. Analyse de la fréquence de pics discriminants selon la durée de culture
 
 ```{r}
 ## Transform metadata
