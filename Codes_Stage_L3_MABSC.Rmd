@@ -1,5 +1,5 @@
 ---
-title: "Compte rendu de stage"
+title: "Contribution de la spectrométrie de masse de type MALDI-TOF à l’identification des sous-espèces du complexe Mycobacterium abscessus - Codes"
 author: "Lise Bigey et Alexandre Godmer"
 date: '`r Sys.Date()`'
 output:
